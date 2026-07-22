@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 
 from core.uniswap_math import (
+    liquidity_from_amounts,
     liquidity_from_token0,
     liquidity_from_token1,
     price_to_sqrt,
@@ -144,6 +145,123 @@ def test_invalid_range_raises():
     with pytest.raises(ValueError):
         liquidity_from_token1(
             Decimal("1"),
+            lower,
+            lower,
+        )
+
+
+def test_liquidity_from_amounts_below_range():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("5").sqrt()
+
+    liquidity = liquidity_from_amounts(
+        Decimal("5"),
+        Decimal("100"),
+        price,
+        lower,
+        upper,
+    )
+
+    expected = liquidity_from_token0(
+        Decimal("5"),
+        lower,
+        upper,
+    )
+
+    assert liquidity == expected
+
+
+def test_liquidity_from_amounts_above_range():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("30").sqrt()
+
+    liquidity = liquidity_from_amounts(
+        Decimal("5"),
+        Decimal("100"),
+        price,
+        lower,
+        upper,
+    )
+
+    expected = liquidity_from_token1(
+        Decimal("100"),
+        lower,
+        upper,
+    )
+
+    assert liquidity == expected
+
+
+def test_liquidity_from_amounts_inside_range():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    liquidity = liquidity_from_amounts(
+        Decimal("5"),
+        Decimal("100"),
+        price,
+        lower,
+        upper,
+    )
+
+    assert liquidity > Decimal("0")
+
+
+def test_liquidity_from_amounts_negative_amount0():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    with pytest.raises(ValueError):
+        liquidity_from_amounts(
+            Decimal("-1"),
+            Decimal("100"),
+            price,
+            lower,
+            upper,
+        )
+
+
+def test_liquidity_from_amounts_negative_amount1():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    with pytest.raises(ValueError):
+        liquidity_from_amounts(
+            Decimal("1"),
+            Decimal("-100"),
+            price,
+            lower,
+            upper,
+        )
+
+
+def test_liquidity_from_amounts_invalid_sqrt_price():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+
+    with pytest.raises(ValueError):
+        liquidity_from_amounts(
+            Decimal("1"),
+            Decimal("100"),
+            Decimal("0"),
+            lower,
+            upper,
+        )
+
+
+def test_liquidity_from_amounts_invalid_range():
+    lower = Decimal("10").sqrt()
+
+    with pytest.raises(ValueError):
+        liquidity_from_amounts(
+            Decimal("1"),
+            Decimal("100"),
+            Decimal("15").sqrt(),
             lower,
             lower,
         )

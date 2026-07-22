@@ -86,3 +86,73 @@ def liquidity_from_token1(
     _validate_range(sqrt_lower, sqrt_upper)
 
     return amount1 / (sqrt_upper - sqrt_lower)
+
+
+def _validate_sqrt_price(sqrt_price: Decimal) -> None:
+    if not sqrt_price.is_finite():
+        raise ValueError("Sqrt price must be finite.")
+
+    if sqrt_price <= 0:
+        raise ValueError("Sqrt price must be positive.")
+
+
+def liquidity_from_amounts(
+    amount0: Decimal,
+    amount1: Decimal,
+    sqrt_price: Decimal,
+    sqrt_lower: Decimal,
+    sqrt_upper: Decimal,
+) -> Decimal:
+    """
+    Calculate the maximum liquidity that can be minted from token amounts.
+
+    Parameters
+    ----------
+    amount0 : Decimal
+        Amount of token0 (HYPE).
+    amount1 : Decimal
+        Amount of token1 (USDC).
+    sqrt_price : Decimal
+        Current sqrt(price).
+    sqrt_lower : Decimal
+        Lower sqrt(price) bound.
+    sqrt_upper : Decimal
+        Upper sqrt(price) bound.
+
+    Returns
+    -------
+    Decimal
+        Liquidity that can be minted.
+    """
+
+    if amount0 < 0:
+        raise ValueError("Amount0 cannot be negative.")
+
+    if amount1 < 0:
+        raise ValueError("Amount1 cannot be negative.")
+
+    _validate_sqrt_price(sqrt_price)
+    _validate_range(sqrt_lower, sqrt_upper)
+
+    # Price is below the range.
+    if sqrt_price <= sqrt_lower:
+        return liquidity_from_token0(
+            amount0,
+            sqrt_lower,
+            sqrt_upper,
+        )
+
+    # Price is above the range.
+    if sqrt_price >= sqrt_upper:
+        return liquidity_from_token1(
+            amount1,
+            sqrt_lower,
+            sqrt_upper,
+        )
+
+    # Price is inside the range.
+    liquidity0 = amount0 * sqrt_price * sqrt_upper / (sqrt_upper - sqrt_price)
+
+    liquidity1 = amount1 / (sqrt_price - sqrt_lower)
+
+    return min(liquidity0, liquidity1)
