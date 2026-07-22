@@ -3,6 +3,9 @@ from decimal import Decimal
 import pytest
 
 from core.uniswap_math import (
+    amount0_from_liquidity,
+    amount1_from_liquidity,
+    amounts_from_liquidity,
     liquidity_from_amounts,
     liquidity_from_token0,
     liquidity_from_token1,
@@ -264,4 +267,225 @@ def test_liquidity_from_amounts_invalid_range():
             Decimal("15").sqrt(),
             lower,
             lower,
+        )
+
+
+def test_amount0_from_liquidity_positive():
+    sqrt_price = Decimal("15").sqrt()
+    sqrt_upper = Decimal("20").sqrt()
+
+    amount0 = amount0_from_liquidity(
+        Decimal("1000"),
+        sqrt_price,
+        sqrt_upper,
+    )
+
+    assert amount0 > Decimal("0")
+
+
+def test_amount0_from_liquidity_above_range_returns_zero():
+    sqrt_price = Decimal("25").sqrt()
+    sqrt_upper = Decimal("20").sqrt()
+
+    amount0 = amount0_from_liquidity(
+        Decimal("1000"),
+        sqrt_price,
+        sqrt_upper,
+    )
+
+    assert amount0 == Decimal("0")
+
+
+def test_amount0_from_liquidity_zero_liquidity():
+    sqrt_price = Decimal("15").sqrt()
+    sqrt_upper = Decimal("20").sqrt()
+
+    amount0 = amount0_from_liquidity(
+        Decimal("0"),
+        sqrt_price,
+        sqrt_upper,
+    )
+
+    assert amount0 == Decimal("0")
+
+
+def test_amount0_from_liquidity_negative_liquidity():
+    sqrt_price = Decimal("15").sqrt()
+    sqrt_upper = Decimal("20").sqrt()
+
+    with pytest.raises(ValueError):
+        amount0_from_liquidity(
+            Decimal("-1"),
+            sqrt_price,
+            sqrt_upper,
+        )
+
+
+def test_amount0_from_liquidity_invalid_sqrt_price():
+    sqrt_upper = Decimal("20").sqrt()
+
+    with pytest.raises(ValueError):
+        amount0_from_liquidity(
+            Decimal("100"),
+            Decimal("0"),
+            sqrt_upper,
+        )
+
+
+def test_amount0_from_liquidity_invalid_upper():
+    sqrt_price = Decimal("15").sqrt()
+
+    with pytest.raises(ValueError):
+        amount0_from_liquidity(
+            Decimal("100"),
+            sqrt_price,
+            Decimal("0"),
+        )
+
+
+def test_amount1_from_liquidity_positive():
+    sqrt_lower = Decimal("10").sqrt()
+    sqrt_price = Decimal("15").sqrt()
+
+    amount1 = amount1_from_liquidity(
+        Decimal("1000"),
+        sqrt_lower,
+        sqrt_price,
+    )
+
+    assert amount1 > Decimal("0")
+
+
+def test_amount1_from_liquidity_below_range_returns_zero():
+    sqrt_lower = Decimal("10").sqrt()
+    sqrt_price = Decimal("5").sqrt()
+
+    amount1 = amount1_from_liquidity(
+        Decimal("1000"),
+        sqrt_lower,
+        sqrt_price,
+    )
+
+    assert amount1 == Decimal("0")
+
+
+def test_amount1_from_liquidity_zero_liquidity():
+    sqrt_lower = Decimal("10").sqrt()
+    sqrt_price = Decimal("15").sqrt()
+
+    amount1 = amount1_from_liquidity(
+        Decimal("0"),
+        sqrt_lower,
+        sqrt_price,
+    )
+
+    assert amount1 == Decimal("0")
+
+
+def test_amount1_from_liquidity_negative_liquidity():
+    sqrt_lower = Decimal("10").sqrt()
+    sqrt_price = Decimal("15").sqrt()
+
+    with pytest.raises(ValueError):
+        amount1_from_liquidity(
+            Decimal("-1"),
+            sqrt_lower,
+            sqrt_price,
+        )
+
+
+def test_amount1_from_liquidity_invalid_lower():
+    sqrt_price = Decimal("15").sqrt()
+
+    with pytest.raises(ValueError):
+        amount1_from_liquidity(
+            Decimal("100"),
+            Decimal("0"),
+            sqrt_price,
+        )
+
+
+def test_amount1_from_liquidity_invalid_sqrt_price():
+    sqrt_lower = Decimal("10").sqrt()
+
+    with pytest.raises(ValueError):
+        amount1_from_liquidity(
+            Decimal("100"),
+            sqrt_lower,
+            Decimal("0"),
+        )
+
+
+def test_amounts_from_liquidity_below_range():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("5").sqrt()
+
+    amount0, amount1 = amounts_from_liquidity(
+        Decimal("1000"),
+        price,
+        lower,
+        upper,
+    )
+
+    assert amount0 > Decimal("0")
+    assert amount1 == Decimal("0")
+
+
+def test_amounts_from_liquidity_inside_range():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    amount0, amount1 = amounts_from_liquidity(
+        Decimal("1000"),
+        price,
+        lower,
+        upper,
+    )
+
+    assert amount0 > Decimal("0")
+    assert amount1 > Decimal("0")
+
+
+def test_amounts_from_liquidity_above_range():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("25").sqrt()
+
+    amount0, amount1 = amounts_from_liquidity(
+        Decimal("1000"),
+        price,
+        lower,
+        upper,
+    )
+
+    assert amount0 == Decimal("0")
+    assert amount1 > Decimal("0")
+
+
+def test_amounts_from_liquidity_negative_liquidity():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    with pytest.raises(ValueError):
+        amounts_from_liquidity(
+            Decimal("-1"),
+            price,
+            lower,
+            upper,
+        )
+
+
+def test_amounts_from_liquidity_invalid_price():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+
+    with pytest.raises(ValueError):
+        amounts_from_liquidity(
+            Decimal("100"),
+            Decimal("0"),
+            lower,
+            upper,
         )

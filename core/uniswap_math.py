@@ -156,3 +156,142 @@ def liquidity_from_amounts(
     liquidity1 = amount1 / (sqrt_price - sqrt_lower)
 
     return min(liquidity0, liquidity1)
+
+
+def amount0_from_liquidity(
+    liquidity: Decimal,
+    sqrt_price: Decimal,
+    sqrt_upper: Decimal,
+) -> Decimal:
+    """
+    Calculate token0 amount represented by liquidity.
+
+    Parameters
+    ----------
+    liquidity : Decimal
+        Position liquidity.
+    sqrt_price : Decimal
+        Current sqrt(price).
+    sqrt_upper : Decimal
+        Upper sqrt(price) bound.
+
+    Returns
+    -------
+    Decimal
+        Amount of token0.
+    """
+
+    if liquidity < 0:
+        raise ValueError("Liquidity cannot be negative.")
+
+    _validate_sqrt_price(sqrt_price)
+    _validate_sqrt_price(sqrt_upper)
+
+    if sqrt_price >= sqrt_upper:
+        return Decimal("0")
+
+    return liquidity * (sqrt_upper - sqrt_price) / (sqrt_price * sqrt_upper)
+
+
+def amount1_from_liquidity(
+    liquidity: Decimal,
+    sqrt_lower: Decimal,
+    sqrt_price: Decimal,
+) -> Decimal:
+    """
+    Calculate token1 amount represented by liquidity.
+
+    Parameters
+    ----------
+    liquidity : Decimal
+        Position liquidity.
+    sqrt_lower : Decimal
+        Lower sqrt(price) bound.
+    sqrt_price : Decimal
+        Current sqrt(price).
+
+    Returns
+    -------
+    Decimal
+        Amount of token1.
+    """
+
+    if liquidity < 0:
+        raise ValueError("Liquidity cannot be negative.")
+
+    _validate_sqrt_price(sqrt_lower)
+    _validate_sqrt_price(sqrt_price)
+
+    if sqrt_price <= sqrt_lower:
+        return Decimal("0")
+
+    return liquidity * (sqrt_price - sqrt_lower)
+
+
+def amounts_from_liquidity(
+    liquidity: Decimal,
+    sqrt_price: Decimal,
+    sqrt_lower: Decimal,
+    sqrt_upper: Decimal,
+) -> tuple[Decimal, Decimal]:
+    """
+    Calculate token amounts represented by liquidity.
+
+    Parameters
+    ----------
+    liquidity : Decimal
+        Position liquidity.
+    sqrt_price : Decimal
+        Current sqrt(price).
+    sqrt_lower : Decimal
+        Lower sqrt(price) bound.
+    sqrt_upper : Decimal
+        Upper sqrt(price) bound.
+
+    Returns
+    -------
+    tuple[Decimal, Decimal]
+        (amount0, amount1)
+    """
+
+    if liquidity < 0:
+        raise ValueError("Liquidity cannot be negative.")
+
+    _validate_sqrt_price(sqrt_price)
+    _validate_range(sqrt_lower, sqrt_upper)
+
+    # Price below range -> all token0
+    if sqrt_price <= sqrt_lower:
+        return (
+            amount0_from_liquidity(
+                liquidity,
+                sqrt_lower,
+                sqrt_upper,
+            ),
+            Decimal("0"),
+        )
+
+    # Price above range -> all token1
+    if sqrt_price >= sqrt_upper:
+        return (
+            Decimal("0"),
+            amount1_from_liquidity(
+                liquidity,
+                sqrt_lower,
+                sqrt_upper,
+            ),
+        )
+
+    # Price inside range
+    return (
+        amount0_from_liquidity(
+            liquidity,
+            sqrt_price,
+            sqrt_upper,
+        ),
+        amount1_from_liquidity(
+            liquidity,
+            sqrt_lower,
+            sqrt_price,
+        ),
+    )
