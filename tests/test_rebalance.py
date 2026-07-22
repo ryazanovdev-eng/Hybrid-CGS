@@ -6,6 +6,7 @@ from core.clmm import CLMMPosition
 from core.lending import LendingPosition
 from core.portfolio import Portfolio
 from core.rebalance import RebalanceEngine
+from core.strategy import HybridCGSStrategy
 
 
 def create_portfolio() -> Portfolio:
@@ -27,6 +28,9 @@ def create_portfolio() -> Portfolio:
 def test_needs_rebalance_false():
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     assert (
@@ -41,6 +45,9 @@ def test_needs_rebalance_false():
 def test_needs_rebalance_below():
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     assert (
@@ -55,6 +62,9 @@ def test_needs_rebalance_below():
 def test_needs_rebalance_above():
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     assert (
@@ -76,6 +86,9 @@ def test_needs_rebalance_without_clmm():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     assert (
@@ -94,6 +107,9 @@ def test_close_position():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     engine.close_position(
@@ -116,6 +132,9 @@ def test_close_position_without_clmm():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     engine.close_position(
@@ -136,6 +155,9 @@ def test_close_position_does_not_modify_lending():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     engine.close_position(
@@ -153,6 +175,9 @@ def test_repay_debt_full():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     repaid = engine.repay_debt(
@@ -171,6 +196,9 @@ def test_repay_debt_partial():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     repaid = engine.repay_debt(
@@ -189,6 +217,9 @@ def test_repay_debt_more_than_debt():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     repaid = engine.repay_debt(
@@ -207,6 +238,9 @@ def test_repay_debt_limited_by_wallet():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     repaid = engine.repay_debt(
@@ -224,6 +258,9 @@ def test_repay_debt_zero():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     repaid = engine.repay_debt(
@@ -240,6 +277,9 @@ def test_repay_debt_negative():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     with pytest.raises(ValueError):
@@ -256,6 +296,9 @@ def test_borrow_to_target_hf():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     borrowed = engine.borrow_to_target_hf(
@@ -280,6 +323,9 @@ def test_borrow_to_target_hf_already_at_target():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     borrowed = engine.borrow_to_target_hf(
@@ -298,6 +344,9 @@ def test_borrow_to_target_hf_above_target():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     borrowed = engine.borrow_to_target_hf(
@@ -316,6 +365,9 @@ def test_borrow_to_target_hf_adds_to_wallet():
 
     engine = RebalanceEngine(
         target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
     )
 
     borrowed = engine.borrow_to_target_hf(
@@ -324,3 +376,254 @@ def test_borrow_to_target_hf_adds_to_wallet():
     )
 
     assert portfolio.wallet_usdc == Decimal("15") + borrowed
+
+
+def test_open_clmm_position():
+    portfolio = create_portfolio()
+
+    portfolio.clmm = None
+    portfolio.wallet_hype = Decimal("5")
+    portfolio.wallet_usdc = Decimal("100")
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    engine.open_clmm_position(
+        portfolio=portfolio,
+        hype_amount=Decimal("5"),
+        usdc_amount=Decimal("100"),
+        current_price=Decimal("20"),
+        lower_price=Decimal("18"),
+        upper_price=Decimal("22"),
+    )
+
+    assert portfolio.clmm is not None
+    assert portfolio.wallet_hype == Decimal("0")
+    assert portfolio.wallet_usdc == Decimal("0")
+
+
+def test_open_clmm_position_negative_hype():
+    portfolio = create_portfolio()
+
+    portfolio.clmm = None
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="HYPE amount cannot be negative."):
+        engine.open_clmm_position(
+            portfolio=portfolio,
+            hype_amount=Decimal("-1"),
+            usdc_amount=Decimal("10"),
+            current_price=Decimal("20"),
+            lower_price=Decimal("18"),
+            upper_price=Decimal("22"),
+        )
+
+
+def test_open_clmm_position_negative_usdc():
+    portfolio = create_portfolio()
+
+    portfolio.clmm = None
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="USDC amount cannot be negative."):
+        engine.open_clmm_position(
+            portfolio=portfolio,
+            hype_amount=Decimal("1"),
+            usdc_amount=Decimal("-10"),
+            current_price=Decimal("20"),
+            lower_price=Decimal("18"),
+            upper_price=Decimal("22"),
+        )
+
+
+def test_open_clmm_position_not_enough_hype():
+    portfolio = create_portfolio()
+
+    portfolio.clmm = None
+    portfolio.wallet_hype = Decimal("1")
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Not enough HYPE in wallet."):
+        engine.open_clmm_position(
+            portfolio=portfolio,
+            hype_amount=Decimal("5"),
+            usdc_amount=Decimal("0"),
+            current_price=Decimal("20"),
+            lower_price=Decimal("18"),
+            upper_price=Decimal("22"),
+        )
+
+
+def test_open_clmm_position_not_enough_usdc():
+    portfolio = create_portfolio()
+
+    portfolio.clmm = None
+    portfolio.wallet_hype = Decimal("5")
+    portfolio.wallet_usdc = Decimal("50")
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Not enough USDC in wallet."):
+        engine.open_clmm_position(
+            portfolio=portfolio,
+            hype_amount=Decimal("5"),
+            usdc_amount=Decimal("100"),
+            current_price=Decimal("20"),
+            lower_price=Decimal("18"),
+            upper_price=Decimal("22"),
+        )
+
+
+def test_open_clmm_position_does_not_modify_lending():
+    portfolio = create_portfolio()
+
+    portfolio.clmm = None
+    portfolio.wallet_hype = Decimal("5")
+    portfolio.wallet_usdc = Decimal("100")
+
+    collateral_before = portfolio.lending.collateral_hype
+    debt_before = portfolio.lending.debt_usdc
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    engine.open_clmm_position(
+        portfolio=portfolio,
+        hype_amount=Decimal("5"),
+        usdc_amount=Decimal("100"),
+        current_price=Decimal("20"),
+        lower_price=Decimal("18"),
+        upper_price=Decimal("22"),
+    )
+
+    assert portfolio.lending.collateral_hype == collateral_before
+    assert portfolio.lending.debt_usdc == debt_before
+
+
+def test_rebalance_not_needed():
+    portfolio = create_portfolio()
+
+    wallet_hype_before = portfolio.wallet_hype
+    wallet_usdc_before = portfolio.wallet_usdc
+    debt_before = portfolio.lending.debt_usdc
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    engine.rebalance(
+        portfolio,
+        Decimal("20"),
+    )
+
+    assert portfolio.clmm is not None
+    assert portfolio.wallet_hype == wallet_hype_before
+    assert portfolio.wallet_usdc == wallet_usdc_before
+    assert portfolio.lending.debt_usdc == debt_before
+
+
+def test_rebalance_restores_target_hf():
+    portfolio = create_portfolio()
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    engine.rebalance(
+        portfolio,
+        Decimal("25"),
+    )
+
+    assert (
+        portfolio.lending.health_factor(
+            Decimal("25"),
+        )
+        == engine.target_hf
+    )
+
+
+def test_rebalance_wallet_balances_non_negative():
+    portfolio = create_portfolio()
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    engine.rebalance(
+        portfolio,
+        Decimal("25"),
+    )
+
+    assert portfolio.wallet_hype >= Decimal("0")
+    assert portfolio.wallet_usdc >= Decimal("0")
+
+
+def test_rebalance_full_cycle():
+    portfolio = create_portfolio()
+
+    engine = RebalanceEngine(
+        target_hf=Decimal("1.8"),
+        strategy=HybridCGSStrategy(
+            stable_ratio=Decimal("0.3"),
+        ),
+    )
+
+    engine.rebalance(
+        portfolio,
+        Decimal("25"),
+    )
+
+    assert portfolio.clmm is not None
+    assert portfolio.clmm.in_range(Decimal("25"))
+
+    assert portfolio.stable_usdc > Decimal("0")
+
+    assert portfolio.wallet_hype == Decimal("0")
+    assert portfolio.wallet_usdc == Decimal("0")
+
+    assert (
+        portfolio.lending.health_factor(
+            Decimal("25"),
+        )
+        >= engine.target_hf
+    )
