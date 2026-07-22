@@ -4,3 +4,6 @@ matplotlib>=3.9
 pytest>=8.0
 pydantic>=2.0
 scipy>=1.18
+ruff>=0.12
+black>=25.0
+mypy>=1.17
