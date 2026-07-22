@@ -115,3 +115,30 @@ class LendingPosition:
             raise ValueError("Repay amount exceeds debt.")
 
         self.debt_usdc -= amount
+
+    def accrue_interest(
+        self,
+        days: Decimal = Decimal("1"),
+    ) -> None:
+        """
+        Accrue lending and borrowing interest.
+
+        Parameters
+        ----------
+        days : Decimal
+            Number of days.
+        """
+
+        if days < 0:
+            raise ValueError("Days cannot be negative.")
+
+        daily_collateral_rate = self.collateral_apr / Decimal("365")
+
+        daily_borrow_rate = self.borrow_apr / Decimal("365")
+
+        collateral_growth = (Decimal("1") + daily_collateral_rate) ** days
+
+        borrow_growth = (Decimal("1") + daily_borrow_rate) ** days
+
+        self.collateral_hype *= collateral_growth
+        self.debt_usdc *= borrow_growth

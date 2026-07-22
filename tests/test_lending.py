@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+import pytest
+
 from core.lending import LendingPosition
 
 
@@ -105,3 +107,49 @@ def test_repay():
     lending.repay(Decimal("40"))
 
     assert lending.debt_usdc == Decimal("60")
+
+
+def test_accrue_interest_one_day():
+    lending = LendingPosition(
+        collateral_hype=Decimal("100"),
+        debt_usdc=Decimal("100"),
+    )
+
+    lending.accrue_interest()
+
+    assert lending.collateral_hype > Decimal("100")
+    assert lending.debt_usdc > Decimal("100")
+
+
+def test_accrue_interest_one_year():
+    lending = LendingPosition(
+        collateral_hype=Decimal("100"),
+        debt_usdc=Decimal("100"),
+    )
+
+    lending.accrue_interest(Decimal("365"))
+
+    assert lending.collateral_hype > Decimal("101.9")
+    assert lending.debt_usdc > Decimal("104.5")
+
+
+def test_accrue_interest_zero_days():
+    lending = LendingPosition(
+        collateral_hype=Decimal("100"),
+        debt_usdc=Decimal("100"),
+    )
+
+    lending.accrue_interest(Decimal("0"))
+
+    assert lending.collateral_hype == Decimal("100")
+    assert lending.debt_usdc == Decimal("100")
+
+
+def test_accrue_interest_negative_days():
+    lending = LendingPosition(
+        collateral_hype=Decimal("100"),
+        debt_usdc=Decimal("100"),
+    )
+
+    with pytest.raises(ValueError):
+        lending.accrue_interest(Decimal("-1"))
