@@ -1,8 +1,10 @@
-import math
+from decimal import Decimal
 
 import pytest
 
 from core.uniswap_math import (
+    liquidity_from_token0,
+    liquidity_from_token1,
     price_to_sqrt,
     sqrt_to_price,
 )
@@ -11,29 +13,29 @@ from core.uniswap_math import (
 @pytest.mark.parametrize(
     "price",
     [
-        0.0001,
-        0.01,
-        0.1,
-        1,
-        2,
-        10,
-        250,
-        12345.678,
+        Decimal("0.0001"),
+        Decimal("0.01"),
+        Decimal("0.1"),
+        Decimal("1"),
+        Decimal("2"),
+        Decimal("10"),
+        Decimal("250"),
+        Decimal("12345.678"),
     ],
 )
 def test_roundtrip(price):
     sqrt_price = price_to_sqrt(price)
     restored = sqrt_to_price(sqrt_price)
 
-    assert math.isclose(restored, price, rel_tol=1e-12)
+    assert_decimal_close(restored, price)
 
 
 @pytest.mark.parametrize(
     "price",
     [
-        0,
-        -1,
-        -100,
+        Decimal("0"),
+        Decimal("-1"),
+        Decimal("-100"),
     ],
 )
 def test_invalid_price(price):
@@ -44,8 +46,8 @@ def test_invalid_price(price):
 @pytest.mark.parametrize(
     "sqrt_price",
     [
-        0,
-        -1,
+        Decimal("0"),
+        Decimal("-1"),
     ],
 )
 def test_invalid_sqrt(sqrt_price):
@@ -54,6 +56,94 @@ def test_invalid_sqrt(sqrt_price):
 
 
 def test_known_values():
-    assert price_to_sqrt(1.0) == 1.0
-    assert price_to_sqrt(4.0) == 2.0
-    assert sqrt_to_price(5.0) == 25.0
+    assert price_to_sqrt(Decimal("1")) == Decimal("1")
+    assert price_to_sqrt(Decimal("4")) == Decimal("2")
+    assert sqrt_to_price(Decimal("5")) == Decimal("25")
+
+
+def assert_decimal_close(
+    actual: Decimal,
+    expected: Decimal,
+    tolerance: Decimal = Decimal("1e-45"),
+) -> None:
+    assert abs(actual - expected) <= tolerance
+
+
+def test_liquidity_from_token0_positive():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+
+    liquidity = liquidity_from_token0(
+        Decimal("5"),
+        lower,
+        upper,
+    )
+
+    assert liquidity > 0
+
+
+def test_liquidity_from_token1_positive():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+
+    liquidity = liquidity_from_token1(
+        Decimal("100"),
+        lower,
+        upper,
+    )
+
+    assert liquidity > 0
+
+
+def test_zero_amount_returns_zero_liquidity():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+
+    assert liquidity_from_token0(
+        Decimal("0"),
+        lower,
+        upper,
+    ) == Decimal("0")
+
+    assert liquidity_from_token1(
+        Decimal("0"),
+        lower,
+        upper,
+    ) == Decimal("0")
+
+
+def test_negative_amount_raises():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+
+    with pytest.raises(ValueError):
+        liquidity_from_token0(
+            Decimal("-1"),
+            lower,
+            upper,
+        )
+
+    with pytest.raises(ValueError):
+        liquidity_from_token1(
+            Decimal("-1"),
+            lower,
+            upper,
+        )
+
+
+def test_invalid_range_raises():
+    lower = Decimal("10").sqrt()
+
+    with pytest.raises(ValueError):
+        liquidity_from_token0(
+            Decimal("1"),
+            lower,
+            lower,
+        )
+
+    with pytest.raises(ValueError):
+        liquidity_from_token1(
+            Decimal("1"),
+            lower,
+            lower,
+        )
