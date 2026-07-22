@@ -489,3 +489,103 @@ def test_amounts_from_liquidity_invalid_price():
             lower,
             upper,
         )
+
+
+def test_roundtrip_token0_only():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("5").sqrt()
+
+    amount0 = Decimal("5")
+
+    liquidity = liquidity_from_amounts(
+        amount0,
+        Decimal("0"),
+        price,
+        lower,
+        upper,
+    )
+
+    restored0, restored1 = amounts_from_liquidity(
+        liquidity,
+        price,
+        lower,
+        upper,
+    )
+
+    assert_decimal_close(restored0, amount0)
+    assert restored1 == Decimal("0")
+
+
+def test_roundtrip_token1_only():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("25").sqrt()
+
+    amount1 = Decimal("100")
+
+    liquidity = liquidity_from_amounts(
+        Decimal("0"),
+        amount1,
+        price,
+        lower,
+        upper,
+    )
+
+    restored0, restored1 = amounts_from_liquidity(
+        liquidity,
+        price,
+        lower,
+        upper,
+    )
+
+    assert restored0 == Decimal("0")
+    assert_decimal_close(restored1, amount1)
+
+
+def test_liquidity_uses_limiting_token0():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    liquidity = liquidity_from_amounts(
+        Decimal("1"),
+        Decimal("1000000"),
+        price,
+        lower,
+        upper,
+    )
+
+    restored0, restored1 = amounts_from_liquidity(
+        liquidity,
+        price,
+        lower,
+        upper,
+    )
+
+    assert_decimal_close(restored0, Decimal("1"))
+    assert restored1 < Decimal("1000000")
+
+
+def test_liquidity_uses_limiting_token1():
+    lower = Decimal("10").sqrt()
+    upper = Decimal("20").sqrt()
+    price = Decimal("15").sqrt()
+
+    liquidity = liquidity_from_amounts(
+        Decimal("1000000"),
+        Decimal("1"),
+        price,
+        lower,
+        upper,
+    )
+
+    restored0, restored1 = amounts_from_liquidity(
+        liquidity,
+        price,
+        lower,
+        upper,
+    )
+
+    assert restored0 < Decimal("1000000")
+    assert_decimal_close(restored1, Decimal("1"))
