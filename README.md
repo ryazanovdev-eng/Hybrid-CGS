@@ -12,14 +12,19 @@ Research simulator for Hybrid CGS strategy.
 
 ---
 
-Status
+## Progress
 
-- [x] Project initialized
-- [ ] Uniswap Math
-- [ ] CLMM Engine
-- [ ] Lending Engine
-- [ ] Portfolio
-- [ ] Income
-- [ ] Rebalancing
-- [ ] Simulator
-- [ ] Optimizer
+### Core
+- [x] Uniswap V3 Math
+- [x] CLMM Position
+- [x] Lending Position
+- [x] Portfolio
+- [x] Stable Income
+- [x] Fee Model
+- [ ] Rebalance Engine
+- [ ] Simulation Engine
+
+### Analysis
+- [ ] Backtesting
+- [ ] Reports
+- [ ] Optimization
