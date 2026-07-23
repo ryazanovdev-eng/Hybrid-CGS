@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from core.strategy import Allocation, HybridCGSStrategy
-from tests.test_rebalance import create_portfolio
+from tests.core.test_rebalance import create_portfolio
 
 
 def test_allocate_zero_stable():
